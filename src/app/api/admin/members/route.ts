@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 
 // GET /api/admin/members
 export async function GET(req: NextRequest) {
@@ -40,14 +41,34 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/admin/members — create member directly
+// POST /api/admin/members — create member directly (supports isAdmin flag)
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { fullName, mobile, email, village, address, education, skills, membershipType, designation } = body;
+    const {
+      fullName,
+      mobile,
+      email,
+      village,
+      address,
+      education,
+      skills,
+      membershipType,
+      designation,
+      isAdmin,       // boolean — if true, creates an ADMIN user
+      password,      // optional initial password
+    } = body;
 
     if (!fullName || !mobile) {
       return NextResponse.json({ error: 'Full name and mobile are required.' }, { status: 400 });
+    }
+
+    const userRole = isAdmin ? 'ADMIN' : 'MEMBER';
+
+    // Hash password if provided
+    let hashedPassword: string | null = null;
+    if (password && password.length >= 6) {
+      hashedPassword = await bcrypt.hash(password, 10);
     }
 
     const memberCount = await prisma.member.count();
@@ -56,7 +77,13 @@ export async function POST(req: NextRequest) {
     const qrToken = `${memberId}-${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
 
     const user = await prisma.user.create({
-      data: { phone: mobile, email: email || null, role: 'MEMBER', status: 'ACTIVE' },
+      data: {
+        phone: mobile,
+        email: email || null,
+        role: userRole,
+        status: 'ACTIVE',
+        password: hashedPassword,
+      },
     });
 
     const member = await prisma.member.create({
@@ -68,8 +95,8 @@ export async function POST(req: NextRequest) {
         address: address || null,
         education: education || null,
         skills: skills || null,
-        membershipType: membershipType || 'Member',
-        designation: designation || 'Member',
+        membershipType: membershipType || (isAdmin ? 'Employee' : 'Member'),
+        designation: designation || (isAdmin ? 'Admin' : 'Member'),
         status: 'APPROVED',
         qrToken,
       },

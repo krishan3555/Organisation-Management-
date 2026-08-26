@@ -13,6 +13,7 @@ interface Member {
   user: {
     email: string | null;
     phone: string | null;
+    role: string;
   };
 }
 
@@ -33,6 +34,8 @@ export default function AdminMembers() {
   const [newVillage, setNewVillage] = useState('Nagla Padam');
   const [newRole, setNewRole] = useState('Member');
   const [newDesignation, setNewDesignation] = useState('Member');
+  const [newIsAdmin, setNewIsAdmin] = useState(false);
+  const [newPasswordVal, setNewPasswordVal] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form states for editing member
@@ -44,6 +47,14 @@ export default function AdminMembers() {
   const [editRole, setEditRole] = useState('');
   const [editDesignation, setEditDesignation] = useState('');
   const [editStatus, setEditStatus] = useState('APPROVED');
+  const [editUserRole, setEditUserRole] = useState('MEMBER');
+
+  // Password modal states
+  const [passwordMember, setPasswordMember] = useState<Member | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPwd, setShowNewPwd] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const fetchMembers = useCallback(async () => {
     setLoading(true);
@@ -83,6 +94,8 @@ export default function AdminMembers() {
           village: newVillage,
           membershipType: newRole,
           designation: newDesignation,
+          isAdmin: newIsAdmin,
+          password: newPasswordVal || undefined,
         }),
       });
       if (res.ok) {
@@ -90,6 +103,8 @@ export default function AdminMembers() {
         setNewFullName('');
         setNewMobile('');
         setNewEmail('');
+        setNewIsAdmin(false);
+        setNewPasswordVal('');
         fetchMembers();
       } else {
         const err = await res.json();
@@ -112,6 +127,7 @@ export default function AdminMembers() {
     setEditRole(member.membershipType);
     setEditDesignation(member.designation);
     setEditStatus(member.status);
+    setEditUserRole(member.user?.role || 'MEMBER');
   };
 
   const handleUpdateMember = async (e: React.FormEvent) => {
@@ -131,6 +147,7 @@ export default function AdminMembers() {
           membershipType: editRole,
           designation: editDesignation,
           status: editStatus,
+          role: editUserRole,
         }),
       });
       if (res.ok) {
@@ -156,6 +173,40 @@ export default function AdminMembers() {
       }
     } catch {
       alert('Failed to delete member');
+    }
+  };
+
+  const handleSetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwordMember) return;
+    if (newPassword.length < 6) {
+      setPasswordMsg({ type: 'error', text: 'Password must be at least 6 characters.' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordMsg({ type: 'error', text: 'Passwords do not match.' });
+      return;
+    }
+    setIsSubmitting(true);
+    setPasswordMsg(null);
+    try {
+      const res = await fetch(`/api/admin/members/${passwordMember.id}/set-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: newPassword }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPasswordMsg({ type: 'success', text: `Password set successfully for ${passwordMember.fullName}.` });
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        setPasswordMsg({ type: 'error', text: data.error || 'Failed to set password.' });
+      }
+    } catch {
+      setPasswordMsg({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -337,6 +388,13 @@ export default function AdminMembers() {
                             <span className="material-symbols-outlined text-[20px]">edit</span>
                           </button>
                           <button
+                            onClick={() => { setPasswordMember(m); setPasswordMsg(null); setNewPassword(''); setConfirmPassword(''); }}
+                            className="p-1.5 text-tertiary hover:bg-tertiary-container hover:text-on-tertiary-container rounded-md transition-colors cursor-pointer"
+                            title="Set / Reset Password"
+                          >
+                            <span className="material-symbols-outlined text-[20px]">key</span>
+                          </button>
+                          <button
                             onClick={() => handleDeleteMember(m.id)}
                             className="p-1.5 text-error hover:bg-error-container rounded-md transition-colors cursor-pointer"
                             title="Delete Member"
@@ -353,6 +411,72 @@ export default function AdminMembers() {
           </div>
         )}
       </div>
+
+      {/* Set Password Modal */}
+      {passwordMember && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-surface rounded-2xl shadow-xl max-w-md w-full p-6 border border-outline-variant">
+            <div className="flex justify-between items-center mb-5">
+              <div>
+                <h3 className="font-h3 text-h3 text-on-surface">Set Login Password</h3>
+                <p className="font-caption text-caption text-on-surface-variant mt-0.5">
+                  For: <strong>{passwordMember.fullName}</strong> ({passwordMember.user?.phone})
+                </p>
+              </div>
+              <button onClick={() => setPasswordMember(null)} className="text-on-surface-variant hover:text-on-surface p-1 rounded-full cursor-pointer">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {passwordMsg && (
+              <div className={`mb-4 p-3 rounded-xl text-sm flex items-center gap-2 ${passwordMsg.type === 'success' ? 'bg-[#e6f4ea] text-[#137333]' : 'bg-error-container text-on-error-container'}`}>
+                <span className="material-symbols-outlined text-sm">{passwordMsg.type === 'success' ? 'check_circle' : 'error'}</span>
+                {passwordMsg.text}
+              </div>
+            )}
+
+            <form onSubmit={handleSetPassword} className="space-y-4">
+              <div>
+                <label className="block font-label-md text-label-md text-on-surface mb-1">New Password *</label>
+                <div className="relative">
+                  <input
+                    type={showNewPwd ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Minimum 6 characters"
+                    className="w-full pr-10 p-3 bg-surface-container-lowest border border-outline-variant rounded-xl font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  />
+                  <button type="button" onClick={() => setShowNewPwd(!showNewPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant cursor-pointer">
+                    <span className="material-symbols-outlined text-[20px]">{showNewPwd ? 'visibility_off' : 'visibility'}</span>
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block font-label-md text-label-md text-on-surface mb-1">Confirm Password *</label>
+                <input
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter password"
+                  className="w-full p-3 bg-surface-container-lowest border border-outline-variant rounded-xl font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-2 border-t border-outline-variant">
+                <button type="button" onClick={() => setPasswordMember(null)} className="px-5 py-2.5 rounded-xl border border-outline-variant text-on-surface font-label-md hover:bg-surface-container-low cursor-pointer">
+                  Cancel
+                </button>
+                <button type="submit" disabled={isSubmitting} className="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-label-md font-bold hover:opacity-90 shadow-md disabled:opacity-50 cursor-pointer flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[18px]">key</span>
+                  {isSubmitting ? 'Saving...' : 'Set Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Edit Member Modal */}
       {editingMember && (
@@ -467,6 +591,18 @@ export default function AdminMembers() {
                 </div>
               </div>
 
+              <div>
+                <label className="block font-label-md text-label-md text-on-surface mb-1">Admin Panel Access</label>
+                <select
+                  value={editUserRole}
+                  onChange={(e) => setEditUserRole(e.target.value)}
+                  className="w-full p-3 bg-surface-container-lowest border border-outline-variant rounded-xl font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                >
+                  <option value="MEMBER">MEMBER (No Admin access)</option>
+                  <option value="ADMIN">ADMIN (Full Admin access)</option>
+                </select>
+              </div>
+
               <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant">
                 <button
                   type="button"
@@ -571,6 +707,37 @@ export default function AdminMembers() {
                   value={newDesignation}
                   onChange={(e) => setNewDesignation(e.target.value)}
                   placeholder="e.g. Senior Committee Member"
+                  className="w-full p-3 bg-surface-container-lowest border border-outline-variant rounded-xl font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 p-3 bg-surface-container-low rounded-xl border border-outline-variant/30">
+                <input
+                  type="checkbox"
+                  id="newIsAdmin"
+                  checked={newIsAdmin}
+                  onChange={(e) => {
+                    setNewIsAdmin(e.target.checked);
+                    if (e.target.checked) {
+                      setNewRole('Employee');
+                      setNewDesignation('Admin');
+                    }
+                  }}
+                  className="w-4 h-4 text-primary focus:ring-primary border-outline-variant rounded cursor-pointer"
+                />
+                <label htmlFor="newIsAdmin" className="font-label-md text-label-md text-on-surface cursor-pointer select-none">
+                  Make this user an Admin (Can log in to Admin Panel)
+                </label>
+              </div>
+
+              <div>
+                <label className="block font-label-md text-label-md text-on-surface mb-1">Initial Password {newIsAdmin ? '*' : '(Optional)'}</label>
+                <input
+                  type="password"
+                  required={newIsAdmin}
+                  value={newPasswordVal}
+                  onChange={(e) => setNewPasswordVal(e.target.value)}
+                  placeholder={newIsAdmin ? "Minimum 6 characters" : "Leave blank to set later"}
                   className="w-full p-3 bg-surface-container-lowest border border-outline-variant rounded-xl font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
                 />
               </div>

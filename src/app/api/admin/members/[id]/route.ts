@@ -48,13 +48,14 @@ export async function PATCH(
       return NextResponse.json({ error: 'Member not found.' }, { status: 404 });
     }
 
-    // Update associated user if phone/email provided
-    if (phone !== undefined || email !== undefined) {
+    // Update associated user if phone/email/role provided
+    if (phone !== undefined || email !== undefined || body.role !== undefined) {
       await prisma.user.update({
         where: { id: existingMember.userId },
         data: {
           ...(phone !== undefined && { phone }),
           ...(email !== undefined && { email }),
+          ...(body.role !== undefined && { role: body.role }),
         },
       });
     }

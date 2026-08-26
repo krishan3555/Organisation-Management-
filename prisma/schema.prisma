@@ -83,3 +83,4 @@ model Event {
   status               String   @default("DRAFT")
   createdAt            DateTime @default(now())
 }
+

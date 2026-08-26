@@ -50,6 +50,72 @@ export default async function DigitalIdCard() {
 
   return (
     <div className="flex-grow pt-8 pb-section-gap px-4 md:px-10 max-w-7xl mx-auto w-full">
+      {/* Scoped CSS to optimize print layout */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          /* Hide all headers, footers, sidebars, buttons, and navigation elements */
+          header, footer, nav, .sticky, [role="banner"], [role="contentinfo"], .id-card-actions-panel {
+            display: none !important;
+          }
+          /* Adjust layout container properties for print */
+          body, html, main, .flex-grow, .max-w-7xl, .grid {
+            background: #ffffff !important;
+            color: #000000 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-shadow: none !important;
+          }
+          /* Center cards on standard A4 page */
+          .id-cards-container {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 40px !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 auto !important;
+            padding-top: 50px !important;
+          }
+          /* Force exact card print dimensions (standard CR-80 ratio) and backgrounds */
+          .id-card-item {
+            width: 500px !important;
+            height: 315px !important;
+            min-height: 315px !important;
+            border: 1px solid #ccc !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+            page-break-inside: avoid !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          /* Fix layout inside front card */
+          .id-card-item-front {
+            display: flex !important;
+            flex-direction: row !important;
+          }
+          /* Ensure brand panel is visible and properly sized on left */
+          .id-card-item-front > div:first-child {
+            width: 160px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+          }
+          /* Make sure the desktop QR code is always visible on print */
+          .id-card-item-front .hidden.md\\:flex {
+            display: flex !important;
+          }
+          /* Hide mobile-specific QR code element from print */
+          .id-card-item-front .md\\:hidden {
+            display: none !important;
+          }
+        }
+      `}} />
+
       <header className="mb-12 text-center md:text-left">
         <h1 className="font-h1-mobile md:font-h1 text-h1-mobile md:text-h1 text-on-surface mb-2">Digital ID Card</h1>
         <p className="font-body-lg text-body-lg text-on-surface-variant">Official membership digital identity for Nagla Padam Vikas Samiti.</p>
@@ -57,9 +123,9 @@ export default async function DigitalIdCard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-gutter items-start">
         {/* ID Cards Container */}
-        <div className="flex flex-col gap-8 items-center w-full max-w-2xl mx-auto">
+        <div className="flex flex-col gap-8 items-center w-full max-w-2xl mx-auto id-cards-container">
           {/* Front Card */}
-          <div className="w-full bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_20px_rgba(29,53,87,0.05)] border border-outline-variant relative flex flex-col md:flex-row hover:shadow-[0_8px_30px_rgba(29,53,87,0.10)] transition-all md:aspect-[1.586/1] aspect-[1/1.586]">
+          <div className="w-full bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_20px_rgba(29,53,87,0.05)] border border-outline-variant relative flex flex-col md:flex-row hover:shadow-[0_8px_30px_rgba(29,53,87,0.10)] transition-all md:aspect-[1.586/1] aspect-[1/1.586] id-card-item id-card-item-front">
             {/* Top/Left Brand Bar */}
             <div className="bg-tertiary p-4 md:p-6 flex md:flex-col justify-between items-center md:w-1/3 shrink-0">
               <div className="w-14 h-14 bg-white rounded-full p-2 flex items-center justify-center shrink-0">
@@ -121,7 +187,7 @@ export default async function DigitalIdCard() {
           </div>
 
           {/* Back Card */}
-          <div className="w-full bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_20px_rgba(29,53,87,0.05)] border border-outline-variant relative flex flex-col hover:shadow-[0_8px_30px_rgba(29,53,87,0.10)] transition-all p-6 md:p-8 md:aspect-[1.586/1] aspect-[1/1.586]">
+          <div className="w-full bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_20px_rgba(29,53,87,0.05)] border border-outline-variant relative flex flex-col hover:shadow-[0_8px_30px_rgba(29,53,87,0.10)] transition-all p-6 md:p-8 md:aspect-[1.586/1] aspect-[1/1.586] id-card-item">
             <div className="border-b border-outline-variant pb-4 mb-4 flex justify-between items-center">
               <h4 className="font-h3 text-h3 text-primary">Emergency &amp; Contact</h4>
               <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 0" }}>contact_support</span>
@@ -153,7 +219,7 @@ export default async function DigitalIdCard() {
         </div>
 
         {/* Actions Context */}
-        <div className="flex flex-col gap-6 bg-surface-container-low p-8 rounded-2xl border border-surface-variant sticky top-28">
+        <div className="flex flex-col gap-6 bg-surface-container-low p-8 rounded-2xl border border-surface-variant sticky top-28 id-card-actions-panel">
           <div>
             <h2 className="font-h2 text-h2 text-on-surface mb-2">ID Card Actions</h2>
             <p className="font-body-md text-body-md text-on-surface-variant">Manage your digital identity. Use these options to share your verified status or keep a physical copy.</p>

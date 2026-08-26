@@ -1,31 +1,38 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('Seeding Nagla Padam Vikas Samiti database...');
 
+  // Hash default passwords
+  const adminPassword = await bcrypt.hash('Admin@2024', 10);
+  const memberPassword = await bcrypt.hash('Member@123', 10);
+
   // 1. Create Admin User
   const adminUser = await prisma.user.upsert({
     where: { phone: '9999999999' },
-    update: {},
+    update: { password: adminPassword },
     create: {
       phone: '9999999999',
       email: 'admin@npvs.org.in',
       role: 'SUPER_ADMIN',
       status: 'ACTIVE',
+      password: adminPassword,
     },
   });
 
   // 2. Create Sample Approved Members
   const member1User = await prisma.user.upsert({
     where: { phone: '9876543210' },
-    update: {},
+    update: { password: memberPassword },
     create: {
       phone: '9876543210',
       email: 'ramesh.kumar@example.com',
       role: 'MEMBER',
       status: 'ACTIVE',
+      password: memberPassword,
     },
   });
 
@@ -54,12 +61,13 @@ async function main() {
 
   const member2User = await prisma.user.upsert({
     where: { phone: '9876500002' },
-    update: {},
+    update: { password: memberPassword },
     create: {
       phone: '9876500002',
       email: 'meena.bai@example.com',
       role: 'MEMBER',
       status: 'ACTIVE',
+      password: memberPassword,
     },
   });
 
@@ -88,12 +96,13 @@ async function main() {
 
   const member3User = await prisma.user.upsert({
     where: { phone: '9876500003' },
-    update: {},
+    update: { password: memberPassword },
     create: {
       phone: '9876500003',
       email: 'suresh.sharma@example.com',
       role: 'MEMBER',
       status: 'ACTIVE',
+      password: memberPassword,
     },
   });
 
