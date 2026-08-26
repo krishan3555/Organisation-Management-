@@ -1,5 +1,7 @@
-import { prisma } from "@/lib/prisma";
-import Link from "next/link";
+import { prisma } from '@/lib/prisma';
+import Link from 'next/link';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import MemberQRCode from "@/components/MemberQRCode";
 import IdCardActions from "@/components/IdCardActions";
 
@@ -7,15 +9,25 @@ export const dynamic = 'force-dynamic';
 
 export default async function DigitalIdCard() {
   let member: any = null;
-  try {
-    member = await prisma.member.findFirst({
-      where: { status: 'APPROVED' },
-      include: { user: true },
-      orderBy: { joiningDate: 'asc' },
-    });
-  } catch (err) {
-    console.warn('Could not fetch member for ID card at build time:', err);
+
+try {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return null;
   }
+
+  member = await prisma.member.findUnique({
+    where: {
+      userId: session.user.id,
+    },
+    include: {
+      user: true,
+    },
+  });
+} catch (err) {
+  console.warn('Could not fetch member profile:', err);
+}
 
   if (!member) {
     return (

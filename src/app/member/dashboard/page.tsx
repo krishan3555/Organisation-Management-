@@ -1,19 +1,32 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
 // For MVP: show the first approved member's data (normally would use session)
 export default async function MemberDashboard() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    redirect('/login');
+  }
+
   let member: any = null;
+
   try {
-    member = await prisma.member.findFirst({
-      where: { status: 'APPROVED' },
-      include: { user: true },
-      orderBy: { joiningDate: 'asc' },
+    member = await prisma.member.findUnique({
+      where: {
+        userId: session.user.id,
+      },
+      include: {
+        user: true,
+      },
     });
   } catch (err) {
-    console.warn('Could not fetch member profile at build time:', err);
+    console.warn('Could not fetch member profile:', err);
   }
 
   if (!member) {
