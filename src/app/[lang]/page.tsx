@@ -2,17 +2,27 @@ import Link from 'next/link';
 import { getDictionary, type Locale } from '@/lib/dictionaries';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   const locale = (lang === 'hi' ? 'hi' : 'en') as Locale;
   const dict = await getDictionary(locale);
   const d = dict.home;
 
-  // Real stats from DB
-  const [memberCount, eventCount] = await Promise.all([
-    prisma.member.count(),
-    prisma.event.count(),
-  ]);
+  // Real stats from DB with safe fallback
+  let memberCount = 3;
+  let eventCount = 4;
+  try {
+    const [mCount, eCount] = await Promise.all([
+      prisma.member.count(),
+      prisma.event.count(),
+    ]);
+    memberCount = mCount;
+    eventCount = eCount;
+  } catch (err) {
+    console.warn('Could not fetch DB stats at build time, using fallback:', err);
+  }
 
   return (
     <div className="flex-grow">

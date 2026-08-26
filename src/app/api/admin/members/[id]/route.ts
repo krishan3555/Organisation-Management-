@@ -17,7 +17,7 @@ export async function GET(
   }
 }
 
-// PATCH /api/admin/members/[id]
+// PATCH /api/admin/members/[id] — supports editing memberId, phone, email, name, role, etc.
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -25,11 +25,44 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { fullName, village, address, education, skills, membershipType, designation, status } = body;
+    const {
+      memberId,
+      fullName,
+      phone,
+      email,
+      village,
+      address,
+      education,
+      skills,
+      membershipType,
+      designation,
+      status,
+    } = body;
+
+    const existingMember = await prisma.member.findUnique({
+      where: { id },
+      include: { user: true },
+    });
+
+    if (!existingMember) {
+      return NextResponse.json({ error: 'Member not found.' }, { status: 404 });
+    }
+
+    // Update associated user if phone/email provided
+    if (phone !== undefined || email !== undefined) {
+      await prisma.user.update({
+        where: { id: existingMember.userId },
+        data: {
+          ...(phone !== undefined && { phone }),
+          ...(email !== undefined && { email }),
+        },
+      });
+    }
 
     const member = await prisma.member.update({
       where: { id },
       data: {
+        ...(memberId !== undefined && { memberId }),
         ...(fullName !== undefined && { fullName }),
         ...(village !== undefined && { village }),
         ...(address !== undefined && { address }),
@@ -39,6 +72,7 @@ export async function PATCH(
         ...(designation !== undefined && { designation }),
         ...(status !== undefined && { status }),
       },
+      include: { user: true },
     });
 
     return NextResponse.json({ success: true, member });

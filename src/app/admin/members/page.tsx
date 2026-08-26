@@ -23,6 +23,7 @@ export default function AdminMembers() {
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
   // Form states for new member
@@ -33,6 +34,16 @@ export default function AdminMembers() {
   const [newRole, setNewRole] = useState('Member');
   const [newDesignation, setNewDesignation] = useState('Member');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Form states for editing member
+  const [editMemberId, setEditMemberId] = useState('');
+  const [editFullName, setEditFullName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editVillage, setEditVillage] = useState('');
+  const [editRole, setEditRole] = useState('');
+  const [editDesignation, setEditDesignation] = useState('');
+  const [editStatus, setEditStatus] = useState('APPROVED');
 
   const fetchMembers = useCallback(async () => {
     setLoading(true);
@@ -91,6 +102,51 @@ export default function AdminMembers() {
     }
   };
 
+  const openEditModal = (member: Member) => {
+    setEditingMember(member);
+    setEditMemberId(member.memberId);
+    setEditFullName(member.fullName);
+    setEditPhone(member.user?.phone || '');
+    setEditEmail(member.user?.email || '');
+    setEditVillage(member.village || 'Nagla Padam');
+    setEditRole(member.membershipType);
+    setEditDesignation(member.designation);
+    setEditStatus(member.status);
+  };
+
+  const handleUpdateMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMember) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/admin/members/${editingMember.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          memberId: editMemberId,
+          fullName: editFullName,
+          phone: editPhone,
+          email: editEmail,
+          village: editVillage,
+          membershipType: editRole,
+          designation: editDesignation,
+          status: editStatus,
+        }),
+      });
+      if (res.ok) {
+        setEditingMember(null);
+        fetchMembers();
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to update member');
+      }
+    } catch {
+      alert('Network error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleDeleteMember = async (id: string) => {
     if (!confirm('Are you sure you want to remove this member?')) return;
     try {
@@ -124,7 +180,7 @@ export default function AdminMembers() {
         <div>
           <h2 className="font-h2 text-h2 text-on-surface">Member Directory</h2>
           <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-            Manage village members, roles, and status. Total: {members.length}
+            Manage village members, change phone numbers, update IDs, roles, and status. Total: {members.length}
           </p>
         </div>
         <div className="flex items-center gap-4 w-full md:w-auto">
@@ -274,6 +330,13 @@ export default function AdminMembers() {
                             <span className="material-symbols-outlined text-[20px]">visibility</span>
                           </button>
                           <button
+                            onClick={() => openEditModal(m)}
+                            className="p-1.5 text-primary hover:bg-primary-container hover:text-on-primary-container rounded-md transition-colors cursor-pointer"
+                            title="Edit Member ID, Phone, Role, etc."
+                          >
+                            <span className="material-symbols-outlined text-[20px]">edit</span>
+                          </button>
+                          <button
                             onClick={() => handleDeleteMember(m.id)}
                             className="p-1.5 text-error hover:bg-error-container rounded-md transition-colors cursor-pointer"
                             title="Delete Member"
@@ -290,6 +353,140 @@ export default function AdminMembers() {
           </div>
         )}
       </div>
+
+      {/* Edit Member Modal */}
+      {editingMember && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-surface rounded-2xl shadow-xl max-w-lg w-full p-6 border border-outline-variant max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="font-h3 text-h3 text-on-surface">Edit Member Details</h3>
+                <p className="font-caption text-caption text-on-surface-variant">Update official Member ID, phone number, role, or village.</p>
+              </div>
+              <button
+                onClick={() => setEditingMember(null)}
+                className="text-on-surface-variant hover:text-on-surface p-1 rounded-full cursor-pointer"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateMember} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-label-md text-label-md text-on-surface mb-1">Member ID *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editMemberId}
+                    onChange={(e) => setEditMemberId(e.target.value)}
+                    placeholder="e.g. NPVS-2024-0001"
+                    className="w-full p-3 bg-surface-container-lowest border border-outline-variant rounded-xl font-body-md text-body-md font-bold text-primary focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-label-md text-label-md text-on-surface mb-1">Mobile Number *</label>
+                  <input
+                    type="tel"
+                    required
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    placeholder="e.g. 9876543210"
+                    className="w-full p-3 bg-surface-container-lowest border border-outline-variant rounded-xl font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-label-md text-label-md text-on-surface mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={editFullName}
+                  onChange={(e) => setEditFullName(e.target.value)}
+                  className="w-full p-3 bg-surface-container-lowest border border-outline-variant rounded-xl font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-label-md text-label-md text-on-surface mb-1">Email</label>
+                <input
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  className="w-full p-3 bg-surface-container-lowest border border-outline-variant rounded-xl font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-label-md text-label-md text-on-surface mb-1">Village</label>
+                  <input
+                    type="text"
+                    value={editVillage}
+                    onChange={(e) => setEditVillage(e.target.value)}
+                    className="w-full p-3 bg-surface-container-lowest border border-outline-variant rounded-xl font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-label-md text-label-md text-on-surface mb-1">Membership Role</label>
+                  <select
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value)}
+                    className="w-full p-3 bg-surface-container-lowest border border-outline-variant rounded-xl font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  >
+                    <option value="Member">Member</option>
+                    <option value="Volunteer">Volunteer</option>
+                    <option value="Employee">Employee</option>
+                    <option value="Office Bearer">Office Bearer</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-label-md text-label-md text-on-surface mb-1">Designation</label>
+                  <input
+                    type="text"
+                    value={editDesignation}
+                    onChange={(e) => setEditDesignation(e.target.value)}
+                    placeholder="e.g. Senior Committee Member"
+                    className="w-full p-3 bg-surface-container-lowest border border-outline-variant rounded-xl font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-label-md text-label-md text-on-surface mb-1">Status</label>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value)}
+                    className="w-full p-3 bg-surface-container-lowest border border-outline-variant rounded-xl font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  >
+                    <option value="APPROVED">Active (Approved)</option>
+                    <option value="INACTIVE">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant">
+                <button
+                  type="button"
+                  onClick={() => setEditingMember(null)}
+                  className="px-5 py-2.5 rounded-xl border border-outline-variant text-on-surface font-label-md hover:bg-surface-container-low cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-label-md font-bold hover:opacity-90 transition-opacity shadow-md disabled:opacity-50 cursor-pointer"
+                >
+                  {isSubmitting ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Add Member Modal */}
       {isAddModalOpen && (

@@ -26,16 +26,23 @@ function StatusBadge({ status, lang }: { status: string; lang: string }) {
   );
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function EventsPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   const locale = (lang === 'hi' ? 'hi' : 'en') as Locale;
   const dict = await getDictionary(locale);
   const d = dict.events;
 
-  const events = await prisma.event.findMany({
-    where: { OR: [{ status: 'PUBLISHED' }, { status: 'DRAFT' }, { status: 'COMPLETED' }] },
-    orderBy: { date: 'asc' },
-  });
+  let events: any[] = [];
+  try {
+    events = await prisma.event.findMany({
+      where: { OR: [{ status: 'PUBLISHED' }, { status: 'DRAFT' }, { status: 'COMPLETED' }] },
+      orderBy: { date: 'asc' },
+    });
+  } catch (err) {
+    console.warn('Could not fetch events at build time:', err);
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-10 py-section-gap">

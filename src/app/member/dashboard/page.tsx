@@ -1,13 +1,20 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 // For MVP: show the first approved member's data (normally would use session)
 export default async function MemberDashboard() {
-  const member = await prisma.member.findFirst({
-    where: { status: 'APPROVED' },
-    include: { user: true },
-    orderBy: { joiningDate: 'asc' },
-  });
+  let member: any = null;
+  try {
+    member = await prisma.member.findFirst({
+      where: { status: 'APPROVED' },
+      include: { user: true },
+      orderBy: { joiningDate: 'asc' },
+    });
+  } catch (err) {
+    console.warn('Could not fetch member profile at build time:', err);
+  }
 
   if (!member) {
     return (
@@ -31,7 +38,7 @@ export default async function MemberDashboard() {
   const initials = member.fullName
     .split(' ')
     .slice(0, 2)
-    .map((n) => n[0])
+    .map((n: string) => n[0])
     .join('')
     .toUpperCase();
 

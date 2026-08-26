@@ -3,12 +3,19 @@ import Link from "next/link";
 import MemberQRCode from "@/components/MemberQRCode";
 import IdCardActions from "@/components/IdCardActions";
 
+export const dynamic = 'force-dynamic';
+
 export default async function DigitalIdCard() {
-  const member = await prisma.member.findFirst({
-    where: { status: 'APPROVED' },
-    include: { user: true },
-    orderBy: { joiningDate: 'asc' },
-  });
+  let member: any = null;
+  try {
+    member = await prisma.member.findFirst({
+      where: { status: 'APPROVED' },
+      include: { user: true },
+      orderBy: { joiningDate: 'asc' },
+    });
+  } catch (err) {
+    console.warn('Could not fetch member for ID card at build time:', err);
+  }
 
   if (!member) {
     return (
@@ -34,7 +41,7 @@ export default async function DigitalIdCard() {
   const initials = member.fullName
     .split(' ')
     .slice(0, 2)
-    .map((n) => n[0])
+    .map((n: string) => n[0])
     .join('')
     .toUpperCase();
 
