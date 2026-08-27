@@ -12,6 +12,7 @@ interface EventItem {
   endTime: string | null;
   capacity: number | null;
   status: string;
+  image: string | null;
 }
 
 export default function AdminEvents() {
@@ -31,7 +32,9 @@ export default function AdminEvents() {
   const [endTime, setEndTime] = useState('2:00 PM');
   const [capacity, setCapacity] = useState('100');
   const [status, setStatus] = useState('PUBLISHED');
+  const [eventImage, setEventImage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -73,6 +76,7 @@ export default function AdminEvents() {
           endTime,
           capacity: capacity ? parseInt(capacity) : undefined,
           status,
+          image: eventImage || undefined,
         }),
       });
 
@@ -81,6 +85,7 @@ export default function AdminEvents() {
         setTitle('');
         setDescription('');
         setDate('');
+        setEventImage('');
         fetchEvents();
       } else {
         const err = await res.json();
@@ -90,6 +95,29 @@ export default function AdminEvents() {
       alert('Network error');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleUploadFile = async (file: File, callback: (url: string) => void) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        callback(data.url);
+      } else {
+        alert('File upload failed.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error uploading file.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -308,6 +336,27 @@ export default function AdminEvents() {
                   placeholder="Describe the purpose, program and participation details..."
                   className="w-full p-3 bg-surface-container-lowest border border-outline-variant rounded-xl font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none resize-none"
                 ></textarea>
+              </div>
+
+              <div>
+                <label className="block font-label-md text-label-md text-on-surface mb-1">Event Banner/Image (Optional)</label>
+                <div className="flex items-center gap-4">
+                  {eventImage && (
+                    <div className="w-16 h-16 rounded-lg overflow-hidden border border-outline-variant">
+                      <img src={eventImage} alt="Preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleUploadFile(file, setEventImage);
+                    }}
+                    className="font-body-md text-body-md text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-primary-container file:text-on-primary-container hover:file:bg-primary-container/80 cursor-pointer"
+                  />
+                </div>
+                {uploading && <p className="text-xs text-primary animate-pulse mt-1">Uploading image...</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">

@@ -37,6 +37,7 @@ export async function PATCH(
       membershipType,
       designation,
       status,
+      photo,
     } = body;
 
     const existingMember = await prisma.member.findUnique({
@@ -72,6 +73,7 @@ export async function PATCH(
         ...(membershipType !== undefined && { membershipType }),
         ...(designation !== undefined && { designation }),
         ...(status !== undefined && { status }),
+        ...(photo !== undefined && { photo }),
       },
       include: { user: true },
     });

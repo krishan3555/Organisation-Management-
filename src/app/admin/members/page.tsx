@@ -10,6 +10,7 @@ interface Member {
   village: string | null;
   status: string;
   joiningDate: string;
+  photo?: string | null;
   user: {
     email: string | null;
     phone: string | null;
@@ -36,7 +37,9 @@ export default function AdminMembers() {
   const [newDesignation, setNewDesignation] = useState('Member');
   const [newIsAdmin, setNewIsAdmin] = useState(false);
   const [newPasswordVal, setNewPasswordVal] = useState('');
+  const [newPhoto, setNewPhoto] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   // Form states for editing member
   const [editMemberId, setEditMemberId] = useState('');
@@ -48,6 +51,7 @@ export default function AdminMembers() {
   const [editDesignation, setEditDesignation] = useState('');
   const [editStatus, setEditStatus] = useState('APPROVED');
   const [editUserRole, setEditUserRole] = useState('MEMBER');
+  const [editPhoto, setEditPhoto] = useState('');
 
   // Password modal states
   const [passwordMember, setPasswordMember] = useState<Member | null>(null);
@@ -96,6 +100,7 @@ export default function AdminMembers() {
           designation: newDesignation,
           isAdmin: newIsAdmin,
           password: newPasswordVal || undefined,
+          photo: newPhoto || undefined,
         }),
       });
       if (res.ok) {
@@ -105,6 +110,7 @@ export default function AdminMembers() {
         setNewEmail('');
         setNewIsAdmin(false);
         setNewPasswordVal('');
+        setNewPhoto('');
         fetchMembers();
       } else {
         const err = await res.json();
@@ -114,6 +120,29 @@ export default function AdminMembers() {
       alert('Network error');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleUploadFile = async (file: File, callback: (url: string) => void) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        callback(data.url);
+      } else {
+        alert('File upload failed.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error uploading file.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -128,6 +157,7 @@ export default function AdminMembers() {
     setEditDesignation(member.designation);
     setEditStatus(member.status);
     setEditUserRole(member.user?.role || 'MEMBER');
+    setEditPhoto(member.photo || '');
   };
 
   const handleUpdateMember = async (e: React.FormEvent) => {
@@ -148,6 +178,7 @@ export default function AdminMembers() {
           designation: editDesignation,
           status: editStatus,
           role: editUserRole,
+          photo: editPhoto || null,
         }),
       });
       if (res.ok) {
@@ -542,6 +573,27 @@ export default function AdminMembers() {
                 />
               </div>
 
+              <div>
+                <label className="block font-label-md text-label-md text-on-surface mb-1">Profile Photo (Optional)</label>
+                <div className="flex items-center gap-4">
+                  {editPhoto && (
+                    <div className="w-16 h-16 rounded-full overflow-hidden border border-outline-variant">
+                      <img src={editPhoto} alt="Preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleUploadFile(file, setEditPhoto);
+                    }}
+                    className="font-body-md text-body-md text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-primary-container file:text-on-primary-container hover:file:bg-primary-container/80 cursor-pointer"
+                  />
+                </div>
+                {uploading && <p className="text-xs text-primary animate-pulse mt-1">Uploading image...</p>}
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block font-label-md text-label-md text-on-surface mb-1">Village</label>
@@ -672,6 +724,27 @@ export default function AdminMembers() {
                   placeholder="e.g. ramesh@example.com"
                   className="w-full p-3 bg-surface-container-lowest border border-outline-variant rounded-xl font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
                 />
+              </div>
+
+              <div>
+                <label className="block font-label-md text-label-md text-on-surface mb-1">Profile Photo (Optional)</label>
+                <div className="flex items-center gap-4">
+                  {newPhoto && (
+                    <div className="w-16 h-16 rounded-full overflow-hidden border border-outline-variant">
+                      <img src={newPhoto} alt="Preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleUploadFile(file, setNewPhoto);
+                    }}
+                    className="font-body-md text-body-md text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-primary-container file:text-on-primary-container hover:file:bg-primary-container/80 cursor-pointer"
+                  />
+                </div>
+                {uploading && <p className="text-xs text-primary animate-pulse mt-1">Uploading image...</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">

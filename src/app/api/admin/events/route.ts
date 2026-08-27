@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       title, description, category, venue, date, startTime, endTime,
-      capacity, rules, eligibility, status
+      capacity, rules, eligibility, status, image
     } = body;
 
     if (!title || !description) {
@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
         rules: rules || null,
         eligibility: eligibility || null,
         status: status || 'DRAFT',
+        image: image || null,
       },
     });
 

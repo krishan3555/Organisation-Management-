@@ -27,7 +27,7 @@ export async function PATCH(
     const body = await req.json();
     const {
       title, description, category, venue, date, startTime, endTime,
-      capacity, rules, eligibility, status
+      capacity, rules, eligibility, status, image
     } = body;
 
     const event = await prisma.event.update({
@@ -44,6 +44,7 @@ export async function PATCH(
         ...(rules !== undefined && { rules }),
         ...(eligibility !== undefined && { eligibility }),
         ...(status !== undefined && { status }),
+        ...(image !== undefined && { image }),
       },
     });
 

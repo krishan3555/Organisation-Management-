@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
       designation,
       isAdmin,       // boolean — if true, creates an ADMIN user
       password,      // optional initial password
+      photo,         // optional photo url
     } = body;
 
     if (!fullName || !mobile) {
@@ -99,6 +100,7 @@ export async function POST(req: NextRequest) {
         designation: designation || (isAdmin ? 'Admin' : 'Member'),
         status: 'APPROVED',
         qrToken,
+        photo: photo || null,
       },
     });
 

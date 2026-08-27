@@ -61,18 +61,30 @@ export default async function EventsPage({ params }: { params: Promise<{ lang: s
               key={event.id}
               className="bg-surface-container-lowest rounded-2xl shadow-[0_4px_20px_rgba(29,53,87,0.07)] border border-outline-variant/30 overflow-hidden hover:shadow-[0_8px_30px_rgba(29,53,87,0.12)] transition-shadow"
             >
-              <div className="bg-primary-container/20 p-6 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-on-primary-container">event</span>
+              {event.image ? (
+                <div className="h-44 w-full relative bg-surface-container-high overflow-hidden">
+                  <img src={event.image} alt={event.title} className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" />
+                  <div className="absolute top-3 right-3 bg-primary-container/95 backdrop-blur-sm text-on-primary-container font-label-md text-xs px-3 py-1 rounded-full shadow-sm font-semibold">
+                    {event.category || 'Event'}
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-h3 text-[18px] text-on-surface truncate">{event.title}</h3>
-                  {event.category && (
-                    <span className="font-caption text-caption text-on-surface-variant">{event.category}</span>
-                  )}
+              ) : (
+                <div className="bg-primary-container/20 p-6 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-on-primary-container">event</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-h3 text-[18px] text-on-surface truncate">{event.title}</h3>
+                    {event.category && (
+                      <span className="font-caption text-caption text-on-surface-variant">{event.category}</span>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
               <div className="p-6 flex flex-col gap-3">
+                {event.image && (
+                  <h3 className="font-h3 text-[18px] text-on-surface line-clamp-1 mb-1">{event.title}</h3>
+                )}
                 {event.date && (
                   <div className="flex items-center gap-2 text-on-surface-variant">
                     <span className="material-symbols-outlined text-[18px]">calendar_month</span>
