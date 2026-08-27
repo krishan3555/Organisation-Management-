@@ -54,6 +54,7 @@ model MembershipApplication {
   email            String?
   village          String?
   address          String?
+  photo            String?
   education        String?
   skills           String?
   occupation       String?
@@ -67,7 +68,7 @@ model MembershipApplication {
 }
 
 model Event {
-  id                   String   @id @default(cuid())
+  id                   String              @id @default(cuid())
   title                String
   description          String
   category             String?
@@ -80,7 +81,24 @@ model Event {
   capacity             Int?
   rules                String?
   eligibility          String?
-  status               String   @default("DRAFT")
-  createdAt            DateTime @default(now())
+  status               String              @default("DRAFT")
+  createdAt            DateTime            @default(now())
+  registrations        EventRegistration[]
+}
+
+model EventRegistration {
+  id              String   @id @default(cuid())
+  eventId         String
+  event           Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participantName String
+  mobile          String
+  email           String?
+  village         String?
+  age             Int?
+  gender          String?
+  numberOfPeople  Int      @default(1)
+  notes           String?
+  status          String   @default("CONFIRMED")
+  createdAt       DateTime @default(now())
 }
 

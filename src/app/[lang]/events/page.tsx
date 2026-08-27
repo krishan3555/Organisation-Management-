@@ -1,6 +1,7 @@
 import { getDictionary, type Locale } from '@/lib/dictionaries';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
+import EventRegisterModal from '@/components/EventRegisterModal';
 
 function EmptyState({ icon, message }: { icon: string; message: string }) {
   return (
@@ -113,12 +114,7 @@ export default async function EventsPage({ params }: { params: Promise<{ lang: s
                 <div className="flex items-center justify-between mt-2 pt-3 border-t border-outline-variant/30">
                   <StatusBadge status={event.status} lang={lang} />
                   {event.status === 'PUBLISHED' && (
-                    <Link
-                      href={`/${lang}/join`}
-                      className="font-label-md text-label-md bg-primary text-on-primary px-4 py-1.5 rounded-lg hover:opacity-90 transition-opacity"
-                    >
-                      {d.register}
-                    </Link>
+                    <EventRegisterModal event={event} lang={lang} />
                   )}
                 </div>
               </div>

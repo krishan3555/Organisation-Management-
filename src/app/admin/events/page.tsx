@@ -21,6 +21,25 @@ export default function AdminEvents() {
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedEventParticipants, setSelectedEventParticipants] = useState<EventItem | null>(null);
+  const [participants, setParticipants] = useState<any[]>([]);
+  const [loadingParticipants, setLoadingParticipants] = useState(false);
+
+  const fetchEventParticipants = async (ev: EventItem) => {
+    setSelectedEventParticipants(ev);
+    setLoadingParticipants(true);
+    try {
+      const res = await fetch(`/api/events/register?eventId=${ev.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setParticipants(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingParticipants(false);
+    }
+  };
 
   // Form states for creating event
   const [title, setTitle] = useState('');
@@ -282,13 +301,23 @@ export default function AdminEvents() {
                         </button>
                       </td>
                       <td className="py-4 px-6 text-right">
-                        <button
-                          onClick={() => handleDeleteEvent(ev.id)}
-                          className="p-1.5 text-error hover:bg-error-container rounded-md transition-colors cursor-pointer"
-                          title="Delete Event"
-                        >
-                          <span className="material-symbols-outlined text-[20px]">delete</span>
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => fetchEventParticipants(ev)}
+                            className="p-1.5 text-primary hover:bg-primary-container/30 rounded-md transition-colors cursor-pointer flex items-center gap-1 text-xs font-semibold"
+                            title="View Registered Participants"
+                          >
+                            <span className="material-symbols-outlined text-[20px]">how_to_reg</span>
+                            <span className="hidden sm:inline">Participants</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteEvent(ev.id)}
+                            className="p-1.5 text-error hover:bg-error-container rounded-md transition-colors cursor-pointer"
+                            title="Delete Event"
+                          >
+                            <span className="material-symbols-outlined text-[20px]">delete</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -456,6 +485,88 @@ export default function AdminEvents() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* View Participants Modal */}
+      {selectedEventParticipants && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-surface rounded-2xl max-w-2xl w-full p-6 md:p-8 shadow-2xl max-h-[85vh] flex flex-col border border-outline-variant">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-outline-variant">
+              <div>
+                <span className="font-caption text-caption text-primary uppercase font-bold tracking-wider">Registered Participants</span>
+                <h3 className="font-h3 text-h2 text-on-surface">{selectedEventParticipants.title}</h3>
+              </div>
+              <button
+                onClick={() => setSelectedEventParticipants(null)}
+                className="text-on-surface-variant hover:text-on-surface p-1 rounded-full cursor-pointer"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="flex-grow overflow-y-auto">
+              {loadingParticipants ? (
+                <div className="py-12 text-center text-on-surface-variant flex flex-col items-center justify-center">
+                  <span className="material-symbols-outlined text-3xl animate-spin text-primary mb-2">sync</span>
+                  <p>Loading participants...</p>
+                </div>
+              ) : participants.length === 0 ? (
+                <div className="py-12 text-center text-on-surface-variant flex flex-col items-center justify-center">
+                  <span className="material-symbols-outlined text-4xl mb-2 text-outline">group_off</span>
+                  <p className="font-semibold text-on-surface">No participants registered yet</p>
+                  <p className="text-xs text-on-surface-variant mt-1">When users register on the public events page, their entries will show here.</p>
+                </div>
+              ) : (
+                <table className="w-full text-left text-xs md:text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-surface-container-low border-b border-outline-variant text-on-surface-variant font-bold">
+                      <th className="py-2.5 px-3">Participant Name</th>
+                      <th className="py-2.5 px-3">Mobile</th>
+                      <th className="py-2.5 px-3">Village / Locality</th>
+                      <th className="py-2.5 px-3 text-center">Attendees</th>
+                      <th className="py-2.5 px-3">Registered At</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant/30">
+                    {participants.map((p) => (
+                      <tr key={p.id} className="hover:bg-surface-container-low">
+                        <td className="py-3 px-3">
+                          <p className="font-semibold text-on-surface">{p.participantName}</p>
+                          {(p.age || p.gender) && (
+                            <p className="text-[11px] text-on-surface-variant">
+                              {[p.gender, p.age ? `${p.age} yrs` : null].filter(Boolean).join(' • ')}
+                            </p>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 font-semibold text-primary">+91 {p.mobile}</td>
+                        <td className="py-3 px-3 text-on-surface-variant">{p.village || '—'}</td>
+                        <td className="py-3 px-3 text-center">
+                          <span className="bg-primary-container text-on-primary-container font-bold px-2 py-0.5 rounded-full text-xs">
+                            {p.numberOfPeople}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-on-surface-variant text-[11px]">
+                          {new Date(p.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            <div className="pt-4 border-t border-outline-variant flex justify-between items-center mt-4">
+              <span className="text-xs text-on-surface-variant font-semibold">
+                Total Registered Participants: {participants.length}
+              </span>
+              <button
+                onClick={() => setSelectedEventParticipants(null)}
+                className="px-5 py-2 bg-surface-container-high text-on-surface font-label-md text-xs rounded-xl hover:bg-surface-variant cursor-pointer border border-outline-variant"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

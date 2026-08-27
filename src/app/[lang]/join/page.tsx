@@ -8,7 +8,38 @@ export default function JoinPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const isHi = lang === 'hi';
+
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingPhoto(true);
+    setError('');
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setPhotoUrl(data.url);
+      } else {
+        setError(isHi ? 'फ़ोटो अपलोड करने में विफल।' : 'Photo upload failed. Please try again.');
+      }
+    } catch {
+      setError(isHi ? 'फ़ोटो अपलोड करने में त्रुटि।' : 'Error uploading photo.');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -30,6 +61,8 @@ export default function JoinPage() {
       reason: getVal('motivation'),
       requestedRole: getVal('role') || 'member',
       gender: getVal('gender'),
+      dateOfBirth: getVal('dob'),
+      photo: photoUrl || null,
     };
 
     try {
@@ -39,7 +72,14 @@ export default function JoinPage() {
         body: JSON.stringify(data),
       });
       if (res.ok) {
-        router.push(`/${lang}/join/success`);
+        const json = await res.json();
+        const queryParams = new URLSearchParams({
+          memberId: json.memberId || '',
+          phone: json.phone || '',
+          password: json.password || '',
+          name: json.fullName || '',
+        }).toString();
+        router.push(`/${lang}/join/success?${queryParams}`);
       } else {
         const json = await res.json().catch(() => ({}));
         setError(json.error || (isHi ? 'कुछ गलत हो गया। कृपया पुनः प्रयास करें।' : 'Something went wrong. Please try again.'));
@@ -110,11 +150,27 @@ export default function JoinPage() {
         <div className="md:col-span-4 flex flex-col gap-6">
           <div className="bg-surface-container-lowest rounded-xl p-6 shadow-[0px_4px_20px_rgba(29,53,87,0.05)] hover:shadow-[0px_8px_30px_rgba(29,53,87,0.10)] transition-shadow border border-surface-variant flex flex-col items-center text-center">
             <div className="w-32 h-32 rounded-full bg-surface-container-low border-2 border-dashed border-outline-variant flex items-center justify-center mb-4 relative overflow-hidden group cursor-pointer">
-              <input className="absolute inset-0 opacity-0 cursor-pointer z-10" id="profile_photo" type="file" accept="image/*" />
-              <div className="flex flex-col items-center text-on-surface-variant group-hover:text-primary transition-colors">
-                <span className="material-symbols-outlined text-4xl mb-1">add_a_photo</span>
-                <span className="font-caption text-caption">{isHi ? 'फ़ोटो अपलोड करें' : 'Upload Photo'}</span>
-              </div>
+              <input
+                className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                id="profile_photo"
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                disabled={isUploadingPhoto}
+              />
+              {photoUrl ? (
+                <img src={photoUrl} alt="Uploaded Photo" className="w-full h-full object-cover" />
+              ) : isUploadingPhoto ? (
+                <div className="flex flex-col items-center text-primary">
+                  <span className="material-symbols-outlined text-4xl mb-1 animate-spin">sync</span>
+                  <span className="font-caption text-caption">{isHi ? 'अपलोड हो रहा है...' : 'Uploading...'}</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center text-on-surface-variant group-hover:text-primary transition-colors">
+                  <span className="material-symbols-outlined text-4xl mb-1">add_a_photo</span>
+                  <span className="font-caption text-caption">{isHi ? 'फ़ोटो अपलोड करें' : 'Upload Photo'}</span>
+                </div>
+              )}
             </div>
             <h3 className="font-h3 text-h3 text-tertiary mb-1">{t.photoTitle}</h3>
             <p className="font-caption text-caption text-on-surface-variant">{t.photoBody}</p>

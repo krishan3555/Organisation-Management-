@@ -201,31 +201,54 @@ try {
 
           {/* Back Card */}
           <div className="w-full bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_20px_rgba(29,53,87,0.05)] border border-outline-variant relative flex flex-col hover:shadow-[0_8px_30px_rgba(29,53,87,0.10)] transition-all p-6 md:p-8 md:aspect-[1.586/1] aspect-[1/1.586] id-card-item">
-            <div className="border-b border-outline-variant pb-4 mb-4 flex justify-between items-center">
-              <h4 className="font-h3 text-h3 text-primary">Emergency &amp; Contact</h4>
-              <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 0" }}>contact_support</span>
+            <div className="border-b border-outline-variant pb-3 mb-3 flex justify-between items-center">
+              <div>
+                <h4 className="font-h3 text-h3 text-primary text-base md:text-lg font-bold">Member Details &amp; Contact</h4>
+                <p className="font-caption text-caption text-on-surface-variant text-xs">Official Member Information</p>
+              </div>
+              <span className="material-symbols-outlined text-primary text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>badge</span>
             </div>
-            <div className="flex-grow flex flex-col gap-4">
-              <div className="flex gap-3 items-start">
-                <span className="material-symbols-outlined text-tertiary mt-1" style={{ fontVariationSettings: "'FILL' 1" }}>location_on</span>
-                <div>
-                  <p className="font-label-md text-label-md text-on-surface mb-1">Registered Address</p>
-                  <p className="font-body-md text-body-md text-on-surface-variant">Gram Panchayat Bhawan, Village Nagla Padam,<br/>Aligarh, Uttar Pradesh - 202001</p>
-                </div>
+
+            <div className="flex-grow grid grid-cols-2 gap-y-3 gap-x-4 text-xs md:text-sm">
+              {/* Father/Guardian */}
+              <div>
+                <p className="font-caption text-caption text-outline uppercase tracking-wider text-[10px] font-bold">Father / Guardian Name</p>
+                <p className="font-body-md text-body-md text-on-surface font-semibold">{member.guardianName || '—'}</p>
               </div>
-              <div className="flex gap-3 items-center">
-                <span className="material-symbols-outlined text-tertiary" style={{ fontVariationSettings: "'FILL' 1" }}>call</span>
-                <p className="font-body-md text-body-md text-on-surface-variant">+91 98765 43210</p>
+
+              {/* Mobile Number */}
+              <div>
+                <p className="font-caption text-caption text-outline uppercase tracking-wider text-[10px] font-bold">Mobile Number</p>
+                <p className="font-body-md text-body-md text-primary font-bold">{member.user?.phone ? `+91 ${member.user.phone}` : '—'}</p>
               </div>
-              <div className="flex gap-3 items-center">
-                <span className="material-symbols-outlined text-tertiary" style={{ fontVariationSettings: "'FILL' 1" }}>mail</span>
-                <p className="font-body-md text-body-md text-on-surface-variant">contact@npvs.org.in</p>
+
+              {/* Date of Birth & Gender */}
+              <div>
+                <p className="font-caption text-caption text-outline uppercase tracking-wider text-[10px] font-bold">Gender / DOB</p>
+                <p className="font-body-md text-body-md text-on-surface">
+                  {[member.gender, member.dateOfBirth ? new Date(member.dateOfBirth).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : null].filter(Boolean).join(' • ') || '—'}
+                </p>
+              </div>
+
+              {/* Education / Skills */}
+              <div>
+                <p className="font-caption text-caption text-outline uppercase tracking-wider text-[10px] font-bold">Education / Occupation</p>
+                <p className="font-body-md text-body-md text-on-surface truncate">{member.education || member.occupation || member.skills || '—'}</p>
+              </div>
+
+              {/* Residential Address */}
+              <div className="col-span-2">
+                <p className="font-caption text-caption text-outline uppercase tracking-wider text-[10px] font-bold">Residential Address</p>
+                <p className="font-body-md text-body-md text-on-surface-variant line-clamp-2">
+                  {member.address ? `${member.address}, ${member.village || 'Nagla Padam'}` : `Village ${member.village || 'Nagla Padam'}, Aligarh, Uttar Pradesh`}
+                </p>
               </div>
             </div>
-            <div className="mt-auto pt-6 border-t border-outline-variant">
-              <p className="font-caption text-caption text-outline text-center">
-                This card is the property of Nagla Padam Vikas Samiti. If found, please return to the above address.<br/>
-                Scan the QR code on the front to verify member authenticity.
+
+            <div className="mt-auto pt-3 border-t border-outline-variant">
+              <p className="font-caption text-caption text-outline text-center text-[10px]">
+                This card is the property of Nagla Padam Vikas Samiti. If found, please return to Gram Panchayat Bhawan, Nagla Padam, Aligarh.<br/>
+                For verification, scan the QR code on the front side.
               </p>
             </div>
           </div>
