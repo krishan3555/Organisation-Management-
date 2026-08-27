@@ -67,14 +67,33 @@ export default function AdminApplications() {
       });
 
       if (res.ok) {
+        const data = await res.json();
         setAdminNotes('');
+        if (action === 'APPROVED' && data.credentials) {
+          const { phone, password, note } = data.credentials;
+          const memberInfo = data.member ? `\nMember ID: ${data.member.memberId}` : '';
+          if (password) {
+            alert(
+              `✅ Member Approved!\n\n${memberInfo}\n\n` +
+              `📱 Login Phone: ${phone}\n` +
+              `🔑 Login Password: ${password}\n\n` +
+              `Please share these credentials with the member so they can log in.`
+            );
+          } else if (note) {
+            alert(`✅ Member Approved!\n\n${memberInfo}\n\n${note}`);
+          } else {
+            alert(`✅ Member approved successfully!${memberInfo}`);
+          }
+        } else if (action === 'REJECTED') {
+          alert('Application has been rejected.');
+        }
         await fetchApplications();
       } else {
         const err = await res.json();
-        alert(err.error || 'Failed to update application');
+        alert('❌ Error: ' + (err.error || 'Failed to update application'));
       }
     } catch {
-      alert('Network error');
+      alert('Network error — please try again.');
     } finally {
       setIsProcessing(false);
     }

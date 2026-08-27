@@ -72,9 +72,16 @@ export async function POST(req: NextRequest) {
       hashedPassword = await bcrypt.hash(password, 10);
     }
 
-    const memberCount = await prisma.member.count();
+    // Generate collision-proof member ID by finding the highest existing number
+    const existingMembers = await prisma.member.findMany({ select: { memberId: true } });
+    let maxNum = 0;
+    for (const m of existingMembers) {
+      const parts = m.memberId.split('-');
+      const num = parseInt(parts[parts.length - 1], 10);
+      if (!isNaN(num) && num > maxNum) maxNum = num;
+    }
     const year = new Date().getFullYear();
-    const memberId = `NPVS-${year}-${String(memberCount + 1).padStart(4, '0')}`;
+    const memberId = `NPVS-${year}-${String(maxNum + 1).padStart(4, '0')}`;
     const qrToken = `${memberId}-${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
 
     const user = await prisma.user.create({
