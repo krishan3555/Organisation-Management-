@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import MemberQRCode from "@/components/MemberQRCode";
+import { redirect } from "next/navigation";
 import IdCardActions from "@/components/IdCardActions";
 
 export const dynamic = 'force-dynamic';
@@ -19,7 +20,7 @@ try {
 
   member = await prisma.member.findUnique({
     where: {
-      userId: session.user.id,
+      userId: (session.user as { id: string }).id,
     },
     include: {
       user: true,

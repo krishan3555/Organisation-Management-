@@ -19,7 +19,7 @@ export default async function MemberDashboard() {
   try {
     member = await prisma.member.findUnique({
       where: {
-        userId: session.user.id,
+        userId: (session.user as { id: string }).id,
       },
       include: {
         user: true,
